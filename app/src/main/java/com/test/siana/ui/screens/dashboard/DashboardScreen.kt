@@ -2,6 +2,7 @@ package com.test.siana.ui.screens.dashboard
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,14 +14,16 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Air
+import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.DeviceThermostat
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -30,20 +33,20 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.test.siana.R
 import com.test.siana.data.model.DisasterLevel
 import com.test.siana.ui.components.SensorCard
 import com.test.siana.ui.components.StatusCard
-import androidx.compose.foundation.border
-import androidx.compose.material.icons.filled.Build
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.statusBarsPadding
+
 
 
 @Composable
@@ -71,10 +74,12 @@ fun DashboardScreen() {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(20.dp)
-        ) {
-            Spacer(modifier = Modifier.height(15.dp))
+                .statusBarsPadding()
+                .padding(horizontal = 25.dp)
+        )
+        {
+
+            Spacer(modifier = Modifier.height(25.dp))
 
             HeaderSection()
 
@@ -107,9 +112,7 @@ fun DashboardScreen() {
                         }
                     },
                     icon = Icons.Default.DeviceThermostat
-
                 )
-
 
                 SensorCard(
                     modifier = Modifier.weight(1f),
@@ -129,15 +132,15 @@ fun DashboardScreen() {
                         }
                     },
                     icon = Icons.Default.Air
-
                 )
-
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
             Card(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
                 shape = RoundedCornerShape(24.dp),
                 colors = CardDefaults.cardColors(
                     containerColor = Color.White
@@ -157,63 +160,101 @@ fun DashboardScreen() {
                         Text(
                             text = "Status",
                             fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.SemiBold
                         )
 
                         Box(
                             modifier = Modifier
-                                .clip(RoundedCornerShape(14.dp))
-                                .background(Color(0xFF4CC9F0))
-                                .padding(horizontal = 10.dp, vertical = 10.dp),
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(Color.White)
+                                .border(
+                                    width = 0.5.dp,
+                                    color = Color.Black,
+                                    shape = RoundedCornerShape(10.dp)
+                                )
+                                .padding(horizontal = 8.dp, vertical = 8.dp),
                             contentAlignment = Alignment.Center
                         ) {
 
                             Icon(
                                 imageVector = Icons.Default.Build,
                                 contentDescription = null,
-                                tint = Color.White
+                                tint = Color.Black
                             )
                         }
                     }
 
                     Spacer(modifier = Modifier.height(20.dp))
 
-                    StatusCard(
-                        title = "Banjir",
-                        status = "Aman",
-                        description = "Tidak terdeteksi adanya banjir",
-                        icon = R.drawable.icon_banjir
-                    )
+                    Box(
+                        modifier = Modifier.weight(1f)
+                    ) {
 
-                    Spacer(modifier = Modifier.height(14.dp))
+                        LazyColumn(
+                            verticalArrangement = Arrangement.spacedBy(14.dp),
+                            modifier = Modifier.fillMaxSize()
+                        ) {
 
-                    StatusCard(
-                        title = "Gempa",
-                        status = "Aman",
-                        description = "Tidak terdeteksi adanya gempa",
-                        icon = R.drawable.icon_gempa
-                    )
+                            item {
+                                StatusCard(
+                                    title = "Banjir",
+                                    status = "Aman",
+                                    description = "Tidak terdeteksi adanya banjir",
+                                    icon = R.drawable.icon_banjir
+                                )
+                            }
 
-                    Spacer(modifier = Modifier.height(14.dp))
+                            item {
+                                StatusCard(
+                                    title = "Gempa",
+                                    status = "Aman",
+                                    description = "Tidak terdeteksi adanya gempa",
+                                    icon = R.drawable.icon_gempa
+                                )
+                            }
 
-                    StatusCard(
-                        title = "Kebakaran",
-                        status = "Aman",
-                        description = "Tidak terdeteksi adanya kebakaran",
-                        icon = R.drawable.icon_kebakaran
-                    )
+                            item {
+                                StatusCard(
+                                    title = "Kebakaran",
+                                    status = "Aman",
+                                    description = "Tidak terdeteksi adanya kebakaran",
+                                    icon = R.drawable.icon_kebakaran
+                                )
+                            }
+
+                        }
+
+
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(30.dp)
+                                .background(
+                                    brush = Brush.verticalGradient(
+                                        colors = listOf(
+                                            Color.Transparent,
+                                            Color.White
+                                        )
+                                    )
+                                )
+                                .align(Alignment.BottomCenter)
+                        )
+
+
+                    }
+
 
                 }
-
+                }
             }
-
         }
     }
 
-}
+
 
 @Composable
 fun HeaderSection() {
+
 
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -248,6 +289,7 @@ fun HeaderSection() {
                     .background(Color.White.copy(alpha = 0.3f)),
                 contentAlignment = Alignment.Center
             ) {
+
                 Icon(
                     imageVector = Icons.Default.Person,
                     contentDescription = null,
@@ -262,6 +304,7 @@ fun HeaderSection() {
 @Composable
 fun GreetingSection(level: DisasterLevel) {
 
+
     val text = when(level) {
         DisasterLevel.AMAN -> "Hai Gardiono! Semua sensor dalam kondisi aman"
         DisasterLevel.WASPADA -> "Terdeteksi adanya anomali sensor"
@@ -274,5 +317,4 @@ fun GreetingSection(level: DisasterLevel) {
         fontSize = 18.sp,
         fontWeight = FontWeight.SemiBold
     )
-
 }

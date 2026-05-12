@@ -64,7 +64,7 @@ fun StatusCard(
                 Text(
                     text = title,
                     fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.SemiBold
                 )
             }
 
