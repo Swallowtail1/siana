@@ -1,8 +1,16 @@
 package com.test.siana.ui.screens.dashboard
 
+import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,6 +19,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -30,6 +39,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -39,18 +49,27 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.navigation.NavController
 import com.test.siana.R
 import com.test.siana.data.model.DisasterLevel
 import com.test.siana.ui.components.SensorCard
 import com.test.siana.ui.components.StatusCard
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.statusBarsPadding
 
-
+val PrimaryDark = Color(0xFF132635)
 
 @Composable
-fun DashboardScreen() {
+fun DashboardScreen(
+    navController: NavController
+) {
+
+    var isCalibrationMode by remember {
+        mutableStateOf(false)
+    }
+
+    val suhuThreshold = remember { mutableStateOf("10") }
+    val udaraThreshold = remember { mutableStateOf("10") }
+    val gempaThreshold = remember { mutableStateOf("10") }
 
     val level = DashboardState.currentLevel
 
@@ -67,7 +86,7 @@ fun DashboardScreen() {
         Image(
             painter = painterResource(id = background),
             contentDescription = null,
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.matchParentSize(),
             contentScale = ContentScale.Crop
         )
 
@@ -75,9 +94,10 @@ fun DashboardScreen() {
             modifier = Modifier
                 .fillMaxSize()
                 .statusBarsPadding()
-                .padding(horizontal = 25.dp)
-        )
-        {
+                .padding(horizontal = 20.dp)
+                .navigationBarsPadding()
+
+        ) {
 
             Spacer(modifier = Modifier.height(25.dp))
 
@@ -140,12 +160,14 @@ fun DashboardScreen() {
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(1f),
+                    .weight(1f)
+                    .padding(bottom = 8.dp),
                 shape = RoundedCornerShape(24.dp),
                 colors = CardDefaults.cardColors(
                     containerColor = Color.White
                 )
-            ) {
+            )
+            {
 
                 Column(
                     modifier = Modifier.padding(20.dp)
@@ -158,9 +180,10 @@ fun DashboardScreen() {
                     ) {
 
                         Text(
-                            text = "Status",
+                            text = if (isCalibrationMode) "Kalibrasi" else "Status",
                             fontSize = 20.sp,
-                            fontWeight = FontWeight.SemiBold
+                            fontWeight = FontWeight.SemiBold,
+                            color = PrimaryDark
                         )
 
                         Box(
@@ -169,17 +192,23 @@ fun DashboardScreen() {
                                 .background(Color.White)
                                 .border(
                                     width = 0.5.dp,
-                                    color = Color.Black,
+                                    color = PrimaryDark,
                                     shape = RoundedCornerShape(10.dp)
                                 )
+                                .clickable {
+                                    isCalibrationMode = !isCalibrationMode
+                                }
                                 .padding(horizontal = 8.dp, vertical = 8.dp),
                             contentAlignment = Alignment.Center
                         ) {
 
                             Icon(
-                                imageVector = Icons.Default.Build,
+                                imageVector = if (isCalibrationMode)
+                                    Icons.Default.ArrowBack
+                                else
+                                    Icons.Default.Build,
                                 contentDescription = null,
-                                tint = Color.Black
+                                tint = PrimaryDark
                             )
                         }
                     }
@@ -187,74 +216,140 @@ fun DashboardScreen() {
                     Spacer(modifier = Modifier.height(20.dp))
 
                     Box(
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f)
                     ) {
 
-                        LazyColumn(
-                            verticalArrangement = Arrangement.spacedBy(14.dp),
-                            modifier = Modifier.fillMaxSize()
-                        ) {
+                        if (!isCalibrationMode) {
 
-                            item {
-                                StatusCard(
-                                    title = "Banjir",
-                                    status = "Aman",
-                                    description = "Tidak terdeteksi adanya banjir",
-                                    icon = R.drawable.icon_banjir
-                                )
+                            LazyColumn(
+                                verticalArrangement = Arrangement.spacedBy(14.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+
+                                item {
+                                    StatusCard(
+                                        title = "Banjir",
+                                        status = "Aman",
+                                        description = "Tidak terdeteksi adanya banjir",
+                                        icon = R.drawable.icon_banjir
+                                    )
+                                }
+
+                                item {
+                                    StatusCard(
+                                        title = "Gempa",
+                                        status = "Aman",
+                                        description = "Tidak terdeteksi adanya gempa",
+                                        icon = R.drawable.icon_gempa
+                                    )
+                                }
+
+                                item {
+                                    StatusCard(
+                                        title = "Kebakaran",
+                                        status = "Aman",
+                                        description = "Tidak terdeteksi adanya kebakaran",
+                                        icon = R.drawable.icon_kebakaran
+                                    )
+                                }
                             }
 
-                            item {
-                                StatusCard(
-                                    title = "Gempa",
-                                    status = "Aman",
-                                    description = "Tidak terdeteksi adanya gempa",
-                                    icon = R.drawable.icon_gempa
-                                )
-                            }
+                        } else {
 
-                            item {
-                                StatusCard(
-                                    title = "Kebakaran",
-                                    status = "Aman",
-                                    description = "Tidak terdeteksi adanya kebakaran",
-                                    icon = R.drawable.icon_kebakaran
-                                )
-                            }
+                            LazyColumn(
+                                verticalArrangement = Arrangement.spacedBy(30.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
 
+                                item {
+
+                                    CalibrationCard(
+                                        title = "Banjir",
+                                        sensor = "Ultrasonik HC-SR04",
+                                        value = suhuThreshold.value,
+                                        onValueChange = {
+                                            suhuThreshold.value = it
+                                        },
+                                        unit = "cm"
+                                    )
+                                }
+
+                                item {
+
+                                    CalibrationCard(
+                                        title = "Gempa",
+                                        sensor = "Gyro MPU-6050",
+                                        value = udaraThreshold.value,
+                                        onValueChange = {
+                                            udaraThreshold.value = it
+                                        },
+                                        unit = "M"
+                                    )
+                                }
+
+                                item {
+
+                                    CalibrationCard(
+                                        title = "Kebakaran",
+                                        sensor = "Suhu DHT-22",
+                                        value = gempaThreshold.value,
+                                        onValueChange = {
+                                            gempaThreshold.value = it
+                                        },
+                                        unit = "°C"
+                                    )
+                                }
+
+                                item {
+
+                                    CalibrationCard(
+                                        title = "Kebakaran",
+                                        sensor = "Asap MQ-135",
+                                        value = gempaThreshold.value,
+                                        onValueChange = {
+                                            gempaThreshold.value = it
+                                        },
+                                        unit = "ppm"
+                                    )
+                                }
+
+                                item {
+
+                                    Button(
+                                        onClick = {
+
+                                        },
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(56.dp),
+                                        shape = RoundedCornerShape(16.dp),
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = Color(0xFF4CC9F0)
+                                        )
+                                    ) {
+
+                                        Text(
+                                            text = "Simpan",
+                                            color = Color.White,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 20.sp
+                                        )
+                                    }
+                                }
+                            }
                         }
 
-
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(30.dp)
-                                .background(
-                                    brush = Brush.verticalGradient(
-                                        colors = listOf(
-                                            Color.Transparent,
-                                            Color.White
-                                        )
-                                    )
-                                )
-                                .align(Alignment.BottomCenter)
-                        )
-
-
                     }
-
-
-                }
                 }
             }
         }
     }
-
-
+}
 
 @Composable
 fun HeaderSection() {
-
 
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -304,7 +399,6 @@ fun HeaderSection() {
 @Composable
 fun GreetingSection(level: DisasterLevel) {
 
-
     val text = when(level) {
         DisasterLevel.AMAN -> "Hai Gardiono! Semua sensor dalam kondisi aman"
         DisasterLevel.WASPADA -> "Terdeteksi adanya anomali sensor"
@@ -317,4 +411,77 @@ fun GreetingSection(level: DisasterLevel) {
         fontSize = 18.sp,
         fontWeight = FontWeight.SemiBold
     )
+
+}
+
+@Composable
+fun CalibrationCard(
+    title: String,
+    sensor: String,
+    value: String,
+    onValueChange: (String) -> Unit,
+    unit: String
+) {
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 2.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+
+        Column(
+            modifier = Modifier.weight(1f)
+        ) {
+
+            Text(
+                text = title,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = PrimaryDark
+            )
+
+            Spacer(modifier = Modifier.height(2.dp))
+
+            Text(
+                text = sensor,
+                fontSize = 13.sp,
+                color = Color.Gray
+            )
+        }
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.End
+        ) {
+
+            OutlinedTextField(
+                value = value,
+                onValueChange = onValueChange,
+                modifier = Modifier.width(58.dp),
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp),
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Number
+                ),
+                textStyle = androidx.compose.ui.text.TextStyle(
+                    color = PrimaryDark,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                )
+            )
+
+            Spacer(modifier = Modifier.width(10.dp))
+
+            Text(
+                text = unit,
+                fontSize = 22.sp,
+                fontWeight = FontWeight.Bold,
+                color = PrimaryDark
+            )
+        }
+    }
+
 }

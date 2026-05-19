@@ -1,5 +1,6 @@
 package com.test.siana
 
+import androidx.core.view.WindowInsetsControllerCompat
 import android.graphics.Color
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -21,7 +22,9 @@ class MainActivity : ComponentActivity() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
         window.statusBarColor = Color.TRANSPARENT
-        window.navigationBarColor = Color.TRANSPARENT
+        window.navigationBarColor = Color.WHITE
+        WindowInsetsControllerCompat(window, window.decorView)
+            .isAppearanceLightNavigationBars = true
 
         setContent {
 
