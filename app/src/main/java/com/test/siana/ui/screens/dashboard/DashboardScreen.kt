@@ -1,12 +1,6 @@
 package com.test.siana.ui.screens.dashboard
 
-import androidx.compose.runtime.*
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.ui.text.input.KeyboardType
+import android.app.Activity
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -22,35 +16,49 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Air
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.DeviceThermostat
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.navigation.NavController
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import com.test.siana.R
 import com.test.siana.data.model.DisasterLevel
 import com.test.siana.ui.components.SensorCard
@@ -59,24 +67,55 @@ import com.test.siana.ui.components.StatusCard
 val PrimaryDark = Color(0xFF132635)
 
 @Composable
-fun DashboardScreen(
-    navController: NavController
-) {
+fun DashboardScreen() {
+
+    val context = LocalContext.current
+    val activity = context as Activity
+
+    SideEffect {
+
+        WindowCompat.setDecorFitsSystemWindows(
+            activity.window,
+            false
+        )
+
+        activity.window.navigationBarColor =
+            android.graphics.Color.WHITE
+
+        WindowInsetsControllerCompat(
+            activity.window,
+            activity.window.decorView
+        ).isAppearanceLightNavigationBars = true
+    }
 
     var isCalibrationMode by remember {
         mutableStateOf(false)
     }
 
-    val suhuThreshold = remember { mutableStateOf("10") }
-    val udaraThreshold = remember { mutableStateOf("10") }
-    val gempaThreshold = remember { mutableStateOf("10") }
+    val suhuThreshold = remember {
+        mutableStateOf("10")
+    }
+
+    val udaraThreshold = remember {
+        mutableStateOf("10")
+    }
+
+    val gempaThreshold = remember {
+        mutableStateOf("10")
+    }
 
     val level = DashboardState.currentLevel
 
     val background = when(level) {
-        DisasterLevel.AMAN -> R.drawable.bg_dashboard_aman
-        DisasterLevel.WASPADA -> R.drawable.bg_dashboard_waspada
-        DisasterLevel.BAHAYA -> R.drawable.bg_dashboard_bahaya
+
+        DisasterLevel.AMAN ->
+            R.drawable.bg_dashboard_aman
+
+        DisasterLevel.WASPADA ->
+            R.drawable.bg_dashboard_waspada
+
+        DisasterLevel.BAHAYA ->
+            R.drawable.bg_dashboard_bahaya
     }
 
     Box(
@@ -94,9 +133,8 @@ fun DashboardScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .statusBarsPadding()
-                .padding(horizontal = 20.dp)
                 .navigationBarsPadding()
-
+                .padding(horizontal = 20.dp)
         ) {
 
             Spacer(modifier = Modifier.height(25.dp))
@@ -166,8 +204,7 @@ fun DashboardScreen(
                 colors = CardDefaults.cardColors(
                     containerColor = Color.White
                 )
-            )
-            {
+            ) {
 
                 Column(
                     modifier = Modifier.padding(20.dp)
@@ -180,7 +217,10 @@ fun DashboardScreen(
                     ) {
 
                         Text(
-                            text = if (isCalibrationMode) "Kalibrasi" else "Status",
+                            text = if (isCalibrationMode)
+                                "Kalibrasi"
+                            else
+                                "Status",
                             fontSize = 20.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = PrimaryDark
@@ -198,15 +238,19 @@ fun DashboardScreen(
                                 .clickable {
                                     isCalibrationMode = !isCalibrationMode
                                 }
-                                .padding(horizontal = 8.dp, vertical = 8.dp),
+                                .padding(
+                                    horizontal = 8.dp,
+                                    vertical = 8.dp
+                                ),
                             contentAlignment = Alignment.Center
                         ) {
 
                             Icon(
-                                imageVector = if (isCalibrationMode)
-                                    Icons.Default.ArrowBack
-                                else
-                                    Icons.Default.Build,
+                                imageVector =
+                                    if (isCalibrationMode)
+                                        Icons.AutoMirrored.Filled.ArrowBack
+                                    else
+                                        Icons.Default.Build,
                                 contentDescription = null,
                                 tint = PrimaryDark
                             )
@@ -229,6 +273,7 @@ fun DashboardScreen(
                             ) {
 
                                 item {
+
                                     StatusCard(
                                         title = "Banjir",
                                         status = "Aman",
@@ -238,6 +283,7 @@ fun DashboardScreen(
                                 }
 
                                 item {
+
                                     StatusCard(
                                         title = "Gempa",
                                         status = "Aman",
@@ -247,6 +293,7 @@ fun DashboardScreen(
                                 }
 
                                 item {
+
                                     StatusCard(
                                         title = "Kebakaran",
                                         status = "Aman",
@@ -340,12 +387,12 @@ fun DashboardScreen(
                                 }
                             }
                         }
-
                     }
                 }
             }
         }
     }
+
 }
 
 @Composable
@@ -400,9 +447,15 @@ fun HeaderSection() {
 fun GreetingSection(level: DisasterLevel) {
 
     val text = when(level) {
-        DisasterLevel.AMAN -> "Hai Gardiono! Semua sensor dalam kondisi aman"
-        DisasterLevel.WASPADA -> "Terdeteksi adanya anomali sensor"
-        DisasterLevel.BAHAYA -> "BAHAYA! Segera lakukan evakuasi"
+
+        DisasterLevel.AMAN ->
+            "Hai Gardiono! Semua sensor dalam kondisi aman"
+
+        DisasterLevel.WASPADA ->
+            "Terdeteksi adanya anomali sensor"
+
+        DisasterLevel.BAHAYA ->
+            "BAHAYA! Segera lakukan evakuasi"
     }
 
     Text(
@@ -465,11 +518,11 @@ fun CalibrationCard(
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Number
                 ),
-                textStyle = androidx.compose.ui.text.TextStyle(
+                textStyle = TextStyle(
                     color = PrimaryDark,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.SemiBold,
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                    textAlign = TextAlign.Center
                 )
             )
 
