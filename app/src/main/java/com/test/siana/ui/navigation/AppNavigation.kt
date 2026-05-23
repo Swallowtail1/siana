@@ -4,8 +4,12 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.test.siana.ui.screens.auth.LoginScreen
+import com.test.siana.ui.screens.auth.AuthScreen
 import com.test.siana.ui.screens.dashboard.DashboardScreen
+import com.test.siana.ui.screens.profile.ProfileScreen
+import com.test.siana.ui.screens.notification.NotificationScreen
+
+
 
 @Composable
 fun AppNavigation() {
@@ -18,12 +22,22 @@ fun AppNavigation() {
     ) {
 
         composable("login") {
-            LoginScreen(navController)
+            AuthScreen(navController)
+
         }
 
         composable("dashboard") {
-            DashboardScreen()
+            DashboardScreen(navController)
         }
+
+        composable("profile") {
+            ProfileScreen(navController)
+        }
+
+        composable("notification") {
+            NotificationScreen(navController)
+        }
+
     }
 
 }
