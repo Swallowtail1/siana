@@ -6,6 +6,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.test.siana.ui.screens.auth.AuthScreen
 import com.test.siana.ui.screens.dashboard.DashboardScreen
+import com.test.siana.ui.screens.profile.ProfileScreen
+
 
 @Composable
 fun AppNavigation() {
@@ -23,8 +25,13 @@ fun AppNavigation() {
         }
 
         composable("dashboard") {
-            DashboardScreen()
+            DashboardScreen(navController)
         }
+
+        composable("profile") {
+            ProfileScreen(navController)
+        }
+
     }
 
 }

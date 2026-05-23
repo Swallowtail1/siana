@@ -1,5 +1,9 @@
 package com.test.siana.ui.screens.dashboard
 
+import androidx.compose.material.icons.filled.Logout
+import androidx.navigation.NavController
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import android.app.Activity
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -8,6 +12,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -33,6 +38,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -67,10 +73,16 @@ import com.test.siana.ui.components.StatusCard
 val PrimaryDark = Color(0xFF132635)
 
 @Composable
-fun DashboardScreen() {
+fun DashboardScreen(
+    navController: NavController
+) {
 
     val context = LocalContext.current
     val activity = context as Activity
+
+    var isProfileMenuOpen by remember {
+        mutableStateOf(false)
+    }
 
     SideEffect {
 
@@ -139,7 +151,13 @@ fun DashboardScreen() {
 
             Spacer(modifier = Modifier.height(25.dp))
 
-            HeaderSection()
+            HeaderSection(
+                navController = navController,
+                isProfileMenuOpen = isProfileMenuOpen,
+                onProfileMenuChange = {
+                    isProfileMenuOpen = it
+                }
+            )
 
             Spacer(modifier = Modifier.height(45.dp))
 
@@ -396,7 +414,12 @@ fun DashboardScreen() {
 }
 
 @Composable
-fun HeaderSection() {
+fun HeaderSection(
+    navController: NavController,
+    isProfileMenuOpen: Boolean,
+    onProfileMenuChange: (Boolean) -> Unit
+)
+ {
 
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -424,19 +447,115 @@ fun HeaderSection() {
 
             Spacer(modifier = Modifier.width(16.dp))
 
-            Box(
-                modifier = Modifier
-                    .size(44.dp)
-                    .clip(RoundedCornerShape(100.dp))
-                    .background(Color.White.copy(alpha = 0.3f)),
-                contentAlignment = Alignment.Center
-            ) {
+            Box {
 
-                Icon(
-                    imageVector = Icons.Default.Person,
-                    contentDescription = null,
-                    tint = Color.White
+                Box(
+                    modifier = Modifier
+                        .size(44.dp)
+                        .clip(RoundedCornerShape(100.dp))
+                        .background(Color.White.copy(alpha = 0.3f))
+                        .clickable {
+
+                            onProfileMenuChange(true)
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+
+                    Icon(
+                        imageVector = Icons.Default.Person,
+                        contentDescription = null,
+                        tint = Color.White
+                    )
+                }
+
+                DropdownMenu(
+                    expanded = isProfileMenuOpen,
+                    onDismissRequest = {
+                        onProfileMenuChange(false)
+                    },
+                    shape = RoundedCornerShape(10.dp),
+                    containerColor = Color.White,
+                    shadowElevation = 4.dp,
+                    tonalElevation = 0.dp
                 )
+                {
+
+                    DropdownMenuItem(
+                        text = {
+
+                            Text(
+                                text = "Profile",
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        },
+                        leadingIcon = {
+
+                            Icon(
+                                imageVector = Icons.Default.Person,
+                                contentDescription = null
+                            )
+                        },
+                        colors = MenuDefaults.itemColors(
+                            textColor = PrimaryDark,
+                            leadingIconColor = PrimaryDark
+                        ),
+                        contentPadding = PaddingValues(
+                            horizontal = 16.dp,
+                            vertical = 6.dp
+                        ),
+                        onClick = {
+
+                            onProfileMenuChange(false)
+
+                            navController.navigate("profile")
+
+                        }
+
+
+                    )
+
+                    DropdownMenuItem(
+                        text = {
+
+                            Text(
+                                text = "Logout",
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        },
+                        leadingIcon = {
+
+                            Icon(
+                                imageVector = Icons.Default.Logout,
+                                contentDescription = null
+                            )
+                        },
+                        colors = MenuDefaults.itemColors(
+                            textColor = PrimaryDark,
+                            leadingIconColor = PrimaryDark
+                        ),
+                        contentPadding = PaddingValues(
+                            horizontal = 16.dp,
+                            vertical = 6.dp
+                        ),
+                        onClick = {
+
+                            onProfileMenuChange(false)
+
+                            navController.navigate("login") {
+
+                                launchSingleTop = true
+
+                                popUpTo("dashboard") {
+                                    inclusive = true
+                                }
+
+                            }
+
+                        }
+
+                    )
+                }
+
             }
         }
     }

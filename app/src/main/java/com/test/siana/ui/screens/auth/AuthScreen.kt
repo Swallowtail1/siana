@@ -33,7 +33,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.test.siana.R
 
-val LoginBlue = Color(0xFF156FCB)
+val LoginBlue = Color(0xFF4CC9F0)
 val LoginDark = Color(0xFF132635)
 
 enum class AuthMode {
@@ -256,9 +256,12 @@ fun AuthScreen(
 
                                 navController.navigate("dashboard") {
 
+                                    launchSingleTop = true
+
                                     popUpTo("login") {
                                         inclusive = true
                                     }
+
                                 }
                             }
 
