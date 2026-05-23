@@ -7,6 +7,8 @@ import androidx.navigation.compose.rememberNavController
 import com.test.siana.ui.screens.auth.AuthScreen
 import com.test.siana.ui.screens.dashboard.DashboardScreen
 import com.test.siana.ui.screens.profile.ProfileScreen
+import com.test.siana.ui.screens.notification.NotificationScreen
+
 
 
 @Composable
@@ -30,6 +32,10 @@ fun AppNavigation() {
 
         composable("profile") {
             ProfileScreen(navController)
+        }
+
+        composable("notification") {
+            NotificationScreen(navController)
         }
 
     }

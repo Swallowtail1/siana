@@ -38,6 +38,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -86,19 +87,13 @@ fun DashboardScreen(
 
     SideEffect {
 
-        WindowCompat.setDecorFitsSystemWindows(
-            activity.window,
-            false
-        )
-
-        activity.window.navigationBarColor =
-            android.graphics.Color.WHITE
-
         WindowInsetsControllerCompat(
             activity.window,
             activity.window.decorView
-        ).isAppearanceLightNavigationBars = true
+        ).isAppearanceLightStatusBars = false
+
     }
+
 
     var isCalibrationMode by remember {
         mutableStateOf(false)
@@ -438,12 +433,20 @@ fun HeaderSection(
             verticalAlignment = Alignment.CenterVertically
         ) {
 
-            Icon(
-                imageVector = Icons.Default.Notifications,
-                contentDescription = null,
-                tint = Color.White,
-                modifier = Modifier.size(28.dp)
-            )
+            IconButton(
+                onClick = {
+                    navController.navigate("notification")
+                }
+            ) {
+
+                Icon(
+                    imageVector = Icons.Default.Notifications,
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier.size(28.dp)
+                )
+
+            }
 
             Spacer(modifier = Modifier.width(16.dp))
 

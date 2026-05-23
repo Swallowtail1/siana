@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CameraAlt
@@ -36,6 +35,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import android.app.Activity
+import androidx.compose.foundation.layout.Row
+import androidx.compose.runtime.SideEffect
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.view.WindowInsetsControllerCompat
+
 
 val PrimaryDark = Color(0xFF132635)
 
@@ -43,6 +48,19 @@ val PrimaryDark = Color(0xFF132635)
 fun ProfileScreen(
     navController: NavController
 ) {
+    val context = LocalContext.current
+    val activity = context as Activity
+
+    SideEffect {
+
+        WindowInsetsControllerCompat(
+            activity.window,
+            activity.window.decorView
+        ).isAppearanceLightStatusBars = true
+
+    }
+
+
 
     val name = remember {
         mutableStateOf("Gardiono")
@@ -65,33 +83,38 @@ fun ProfileScreen(
             .fillMaxSize()
             .background(Color(0xFFF4F8FB))
             .navigationBarsPadding()
-            .verticalScroll(rememberScrollState())
             .padding(20.dp)
     ) {
 
         Spacer(modifier = Modifier.height(20.dp))
 
-        IconButton(
-            onClick = {
-                navController.popBackStack()
-            }
+        Box(
+            modifier = Modifier.fillMaxWidth()
         ) {
 
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = null,
-                tint = PrimaryDark
+            IconButton(
+                onClick = {
+                    navController.popBackStack()
+                },
+                modifier = Modifier.align(Alignment.CenterStart)
+            ) {
+
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = null,
+                    tint = PrimaryDark
+                )
+            }
+
+            Text(
+                text = "Profile",
+                modifier = Modifier.align(Alignment.Center),
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                color = PrimaryDark
             )
+
         }
-
-        Spacer(modifier = Modifier.height(10.dp))
-
-        Text(
-            text = "Profile",
-            fontSize = 30.sp,
-            fontWeight = FontWeight.Bold,
-            color = PrimaryDark
-        )
 
         Spacer(modifier = Modifier.height(30.dp))
 
@@ -206,7 +229,7 @@ fun ProfileScreen(
                 ) {
 
                     Text(
-                        text = "Save Changes",
+                        text = "Simpan",
                         color = Color.White,
                         fontWeight = FontWeight.Bold,
                         fontSize = 18.sp
