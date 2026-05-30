@@ -31,15 +31,23 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import com.test.siana.R
+import android.widget.Toast
+import com.test.siana.data.model.User
 
 val LoginBlue = Color(0xFF4CC9F0)
 val LoginDark = Color(0xFF132635)
 
+private lateinit var auth: FirebaseAuth
+private lateinit var firestore: FirebaseFirestore
+
 enum class AuthMode {
     LOGIN,
     REGISTER,
-    REGISTER_KEY
+    REGISTER_KEY,
+    RESET_PASSWORD
 }
 
 @Composable
@@ -68,6 +76,8 @@ fun AuthScreen(
     }
 
     val context = LocalContext.current
+    auth = FirebaseAuth.getInstance()
+    firestore = FirebaseFirestore.getInstance()
     val window = (context as Activity).window
 
     SideEffect {
@@ -137,6 +147,9 @@ fun AuthScreen(
                         AuthMode.REGISTER,
                         AuthMode.REGISTER_KEY ->
                             "Halo, Pengguna Baru"
+
+                        AuthMode.RESET_PASSWORD ->
+                            "Reset Password"
                     },
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
@@ -154,6 +167,9 @@ fun AuthScreen(
                         AuthMode.REGISTER,
                         AuthMode.REGISTER_KEY ->
                             "Buat akun untuk memulai!"
+
+                        AuthMode.RESET_PASSWORD ->
+                            "Masukkan email untuk menerima link reset password"
                     },
                     fontSize = 13.sp,
                     color = Color(0xFF8A8A8A)
@@ -193,7 +209,7 @@ fun AuthScreen(
                             fontWeight = FontWeight.SemiBold,
                             fontSize = 14.sp,
                             modifier = Modifier.clickable {
-
+                                authMode = AuthMode.RESET_PASSWORD
                             }
                         )
                     }
@@ -243,6 +259,17 @@ fun AuthScreen(
                             placeholder = "Masukan key"
                         )
                     }
+
+                    AuthMode.RESET_PASSWORD -> {
+                        AuthTextField(
+                            label = "Email",
+                            value = email,
+                            onValueChange = {
+                                email = it
+                            },
+                            placeholder = "Masukan email"
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(36.dp))
@@ -254,14 +281,20 @@ fun AuthScreen(
 
                             AuthMode.LOGIN -> {
 
-                                navController.navigate("dashboard") {
+                                loginUser(
+                                    context = context,
+                                    username = username,
+                                    password = password
+                                ) {
 
-                                    launchSingleTop = true
+                                    navController.navigate("dashboard") {
 
-                                    popUpTo("login") {
-                                        inclusive = true
+                                        launchSingleTop = true
+
+                                        popUpTo("login") {
+                                            inclusive = true
+                                        }
                                     }
-
                                 }
                             }
 
@@ -271,12 +304,32 @@ fun AuthScreen(
 
                             AuthMode.REGISTER_KEY -> {
 
-                                navController.navigate("dashboard") {
+                                registerUser(
+                                    context = context,
+                                    username = username,
+                                    email = email,
+                                    password = password,
+                                    key = key
+                                ) {
 
-                                    popUpTo("login") {
-                                        inclusive = true
+                                    navController.navigate("dashboard") {
+
+                                        popUpTo("login") {
+                                            inclusive = true
+                                        }
                                     }
                                 }
+
+                            }
+
+                            AuthMode.RESET_PASSWORD -> {
+
+                                resetPassword(
+                                    context = context,
+                                    email = email
+                                )
+
+                                authMode = AuthMode.LOGIN
                             }
                         }
                     },
@@ -300,6 +353,9 @@ fun AuthScreen(
 
                             AuthMode.REGISTER_KEY ->
                                 "Daftar"
+
+                            AuthMode.RESET_PASSWORD ->
+                                "Kirim"
                         },
                         color = Color.White,
                         fontSize = 18.sp,
@@ -323,6 +379,9 @@ fun AuthScreen(
                             AuthMode.REGISTER,
                             AuthMode.REGISTER_KEY ->
                                 "Sudah punya akun? "
+
+                            AuthMode.RESET_PASSWORD ->
+                                "Kembali ke "
                         },
                         color = Color(0xFF666666),
                         fontSize = 13.sp
@@ -337,6 +396,9 @@ fun AuthScreen(
                             AuthMode.REGISTER,
                             AuthMode.REGISTER_KEY ->
                                 "Login"
+
+                            AuthMode.RESET_PASSWORD ->
+                                "Login"
                         },
                         color = LoginBlue,
                         fontSize = 13.sp,
@@ -346,6 +408,8 @@ fun AuthScreen(
                             authMode =
                                 if (authMode == AuthMode.LOGIN)
                                     AuthMode.REGISTER
+                                else if (authMode == AuthMode.RESET_PASSWORD)
+                                    AuthMode.LOGIN
                                 else
                                     AuthMode.LOGIN
                         }
@@ -355,6 +419,164 @@ fun AuthScreen(
         }
     }
 
+}
+
+private fun registerUser(
+
+    context: android.content.Context,
+    username: String,
+    email: String,
+    password: String,
+    key: String,
+    onSuccess: () -> Unit
+
+) {
+    firestore.collection("users")
+        .whereEqualTo("apiKey", key)
+        .get()
+        .addOnSuccessListener { result ->
+
+            if (!result.isEmpty) {
+
+                Toast.makeText(
+                    context,
+                    "API Key sudah digunakan",
+                    Toast.LENGTH_SHORT
+                ).show()
+
+                return@addOnSuccessListener
+            }
+        }
+
+    auth.createUserWithEmailAndPassword(
+        email,
+        password
+    )
+        .addOnSuccessListener {
+
+            val uid =
+                auth.currentUser?.uid ?: return@addOnSuccessListener
+
+            val user = User(
+                uid = uid,
+                username = username,
+                email = email,
+                apiKey = key
+            )
+
+            firestore.collection("users")
+                .document(uid)
+                .set(user)
+                .addOnSuccessListener {
+
+                    Toast.makeText(
+                        context,
+                        "Register berhasil",
+                        Toast.LENGTH_SHORT
+                    ).show()
+
+                }
+        }
+        .addOnFailureListener {
+
+            Toast.makeText(
+                context,
+                it.message,
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+}
+
+private fun loginUser(
+
+    context: android.content.Context,
+    username: String,
+    password: String,
+    onSuccess: () -> Unit
+
+) {
+
+    firestore.collection("users")
+        .whereEqualTo("username", username)
+        .get()
+        .addOnSuccessListener { result ->
+
+            if(result.isEmpty){
+
+                Toast.makeText(
+                    context,
+                    "User tidak ditemukan",
+                    Toast.LENGTH_SHORT
+                ).show()
+
+                return@addOnSuccessListener
+            }
+
+            val email =
+                result.documents[0]
+                    .getString("email") ?: ""
+
+            auth.signInWithEmailAndPassword(
+                email,
+                password
+            )
+                .addOnSuccessListener {
+
+                    Toast.makeText(
+                        context,
+                        "Login berhasil",
+                        Toast.LENGTH_SHORT
+                    ).show()
+
+                    onSuccess()
+                }
+                .addOnFailureListener {
+
+                    Toast.makeText(
+                        context,
+                        "Password salah",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+        }
+}
+
+private fun resetPassword(
+
+    context: android.content.Context,
+    email: String
+
+) {
+
+    if (email.isBlank()) {
+
+        Toast.makeText(
+            context,
+            "Masukkan email terlebih dahulu",
+            Toast.LENGTH_SHORT
+        ).show()
+
+        return
+    }
+
+    auth.sendPasswordResetEmail(email)
+        .addOnSuccessListener {
+
+            Toast.makeText(
+                context,
+                "Link reset password telah dikirim ke email",
+                Toast.LENGTH_LONG
+            ).show()
+
+        }
+        .addOnFailureListener {
+
+            Toast.makeText(
+                context,
+                it.message,
+                Toast.LENGTH_SHORT
+            ).show()
+        }
 }
 
 @Composable
