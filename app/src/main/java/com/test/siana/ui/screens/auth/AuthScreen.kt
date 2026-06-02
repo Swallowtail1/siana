@@ -36,6 +36,9 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.test.siana.R
 import android.widget.Toast
 import com.test.siana.data.model.User
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material3.IconButton
 
 val LoginBlue = Color(0xFF4CC9F0)
 val LoginDark = Color(0xFF132635)
@@ -633,6 +636,7 @@ fun AuthPasswordField(
     onValueChange: (String) -> Unit,
     placeholder: String
 ) {
+    var isPasswordVisible by remember { mutableStateOf(false) }
 
     Text(
         text = label,
@@ -650,7 +654,7 @@ fun AuthPasswordField(
         },
         modifier = Modifier.fillMaxWidth(),
         singleLine = true,
-        visualTransformation = PasswordVisualTransformation(),
+        visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
         keyboardOptions = KeyboardOptions(
             keyboardType = KeyboardType.Password
         ),
@@ -662,12 +666,14 @@ fun AuthPasswordField(
             )
         },
         trailingIcon = {
-
-            Icon(
-                imageVector = Icons.Default.Visibility,
-                contentDescription = null,
-                tint = Color(0xFFA0A0A0)
-            )
+            IconButton(onClick = { isPasswordVisible = !isPasswordVisible }) {
+                Icon(
+                    // 4. Ganti ikon mata berdasarkan status visibility
+                    imageVector = if (isPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                    contentDescription = if (isPasswordVisible) "Sembunyikan password" else "Tampilkan password",
+                    tint = Color(0xFFA0A0A0)
+                )
+            }
         },
         shape = RoundedCornerShape(18.dp),
         colors = OutlinedTextFieldDefaults.colors(
