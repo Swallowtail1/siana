@@ -23,6 +23,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+
+
 @Composable
 fun StatusCard(
     title: String,
@@ -31,12 +33,24 @@ fun StatusCard(
     icon: Int
 ) {
 
+    val statusColor = when(status){
+
+        "Bahaya" ->
+            Color(0xFFDC3545)
+
+        "Waspada" ->
+            Color(0xFFFFC107)
+
+        else ->
+            Color(0xFF4CC9F0)
+    }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .border(
                 width = 0.5.dp,
-                color = Color(0xFF4CC9F0),
+                color = statusColor,
                 shape = RoundedCornerShape(20.dp)
             ),
         shape = RoundedCornerShape(20.dp),
@@ -73,7 +87,7 @@ fun StatusCard(
             Text(
                 text = status,
                 fontSize = 24.sp,
-                color = Color(0xFF4CC9F0),
+                color = statusColor,
                 fontWeight = FontWeight.Bold
             )
 

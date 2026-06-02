@@ -70,19 +70,140 @@ import com.test.siana.R
 import com.test.siana.data.model.DisasterLevel
 import com.test.siana.ui.components.SensorCard
 import com.test.siana.ui.components.StatusCard
+import androidx.compose.runtime.LaunchedEffect
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.ValueEventListener
+import com.test.siana.data.model.SensorData
 
 val PrimaryDark = Color(0xFF132635)
+
+
+private fun calculateLevel(
+    data: SensorData
+): DisasterLevel {
+
+    if (
+        data.water_level >= 200 ||
+        data.vibration >= 50 ||
+        data.mq135 >= 1400.0 ||
+        data.temperature >= 46
+
+
+    ) {
+        return DisasterLevel.BAHAYA
+    }
+
+    if (
+        data.temperature >= 38 ||
+        data.mq135 >= 800.0 ||
+        data.vibration >= 25 ||
+        data.water_level >= 150
+    ) {
+        return DisasterLevel.WASPADA
+    }
+
+    return DisasterLevel.AMAN
+}
 
 @Composable
 fun DashboardScreen(
     navController: NavController
 ) {
 
+    var deviceId by remember {
+        mutableStateOf("")
+    }
+
+    var sensorData by remember {
+        mutableStateOf(SensorData())
+    }
+
+    var username by remember {
+        mutableStateOf("Loading...")
+    }
     val context = LocalContext.current
     val activity = context as Activity
 
     var isProfileMenuOpen by remember {
         mutableStateOf(false)
+    }
+
+    val floodStatus =
+        getFloodStatus(sensorData.water_level)
+
+    val earthquakeStatus =
+        getEarthquakeStatus(sensorData.vibration)
+
+    val fireStatus =
+        getFireStatus(sensorData.temperature)
+
+    LaunchedEffect(Unit) {
+
+        val uid =
+            FirebaseAuth.getInstance()
+                .currentUser?.uid
+
+        if(uid != null){
+
+            FirebaseFirestore.getInstance()
+                .collection("users")
+                .document(uid)
+                .get()
+                .addOnSuccessListener {
+
+                    username =
+                        it.getString("username")
+                            ?: "User"
+
+                    deviceId =
+                        it.getString("apiKey")
+                            ?: ""
+                }
+        }
+
+
+    }
+
+    LaunchedEffect(deviceId) {
+
+        if(deviceId.isBlank())
+            return@LaunchedEffect
+
+        val ref =
+            FirebaseDatabase.getInstance()
+                .getReference(
+                    "devices/$deviceId/data"
+                )
+
+        ref.addValueEventListener(
+            object : ValueEventListener {
+
+                override fun onDataChange(
+                    snapshot: DataSnapshot
+                ) {
+
+                    sensorData =
+                        snapshot.getValue(
+                            SensorData::class.java
+                        ) ?: SensorData()
+
+                    val data = snapshot.getValue(
+                        SensorData::class.java
+                    ) ?: return
+
+                    DashboardState.currentLevel =
+                        calculateLevel(data)
+                }
+
+                override fun onCancelled(
+                    error: DatabaseError
+                ) {}
+            }
+        )
     }
 
     SideEffect {
@@ -124,6 +245,10 @@ fun DashboardScreen(
         DisasterLevel.BAHAYA ->
             R.drawable.bg_dashboard_bahaya
     }
+    val satuan = 100.0
+    val udaraHitung = sensorData.mq135 / 20.0
+    val udaraKurang = satuan - udaraHitung
+    val udaraFormat = String.format("%.2f", udaraKurang)
 
     Box(
         modifier = Modifier.fillMaxSize()
@@ -156,7 +281,8 @@ fun DashboardScreen(
 
             Spacer(modifier = Modifier.height(45.dp))
 
-            GreetingSection(level)
+            GreetingSection(username = username,
+                level = level)
 
             Spacer(modifier = Modifier.height(24.dp))
 
@@ -168,18 +294,36 @@ fun DashboardScreen(
                 SensorCard(
                     modifier = Modifier.weight(1f),
                     title = "Suhu",
-                    value = "39°C",
+                    value = "${sensorData.temperature}°C",
                     description = buildAnnotatedString {
 
-                        append("Bagus! Suhunya ")
+                        append(
+                            when{
+                                sensorData.temperature < 38 -> "Bagus! Suhunya "
+                                sensorData.temperature in 38..45 -> "Suhunya agak "
+                                else -> "Suhu "
+                            }
+                        )
 
                         withStyle(
                             style = SpanStyle(
-                                color = Color(0xFF4CC9F0),
+                                color = Color(
+                                    when{
+                                        sensorData.temperature < 38 -> 0xFF4CC9F0
+                                        sensorData.temperature in 38..45 -> 0xFFFFC107
+                                        else -> 0xFFDC3545
+                                    }
+                                ),
                                 fontWeight = FontWeight.Bold
                             )
                         ) {
-                            append("normal")
+                            append(
+                                when{
+                                    sensorData.temperature < 38 -> "normal"
+                                    sensorData.temperature in 38..45 -> "panas"
+                                    else -> "tidak normal"
+                                }
+                            )
                         }
                     },
                     icon = Icons.Default.DeviceThermostat
@@ -188,18 +332,30 @@ fun DashboardScreen(
                 SensorCard(
                     modifier = Modifier.weight(1f),
                     title = "Udara",
-                    value = "87%",
+                    value = "${udaraFormat}%",
                     description = buildAnnotatedString {
 
-                        append("Udara cukup ")
+                        append("Udaranya ")
 
                         withStyle(
                             style = SpanStyle(
-                                color = Color(0xFF4CC9F0),
+                                color = Color(
+                                    when{
+                                        sensorData.mq135 < 800.0 -> 0xFF4CC9F0
+                                        sensorData.mq135 in 800.0..1400.0 -> 0xFFFFC107
+                                        else -> 0xFFDC3545
+                                    }
+                                ),
                                 fontWeight = FontWeight.Bold
                             )
                         ) {
-                            append("bersih")
+                            append(
+                                when{
+                                    sensorData.mq135 < 800.0 -> "bersih"
+                                    sensorData.mq135 in 800.0..1400.0 -> "cukup bersih"
+                                    else -> "kotor"
+                                }
+                            )
                         }
                     },
                     icon = Icons.Default.Air
@@ -289,8 +445,12 @@ fun DashboardScreen(
 
                                     StatusCard(
                                         title = "Banjir",
-                                        status = "Aman",
-                                        description = "Tidak terdeteksi adanya banjir",
+                                        status = floodStatus,
+                                        description = when{
+                                            sensorData.water_level < 150.0 -> "Tidak terdeteksi adanya banjir"
+                                            sensorData.water_level in 150.0..200.0 -> "Terdeteksi adanya banjir ringan"
+                                            else -> "Telah terdeteksi banjir, Segera bertindak!"
+                                        },
                                         icon = R.drawable.icon_banjir
                                     )
                                 }
@@ -299,8 +459,12 @@ fun DashboardScreen(
 
                                     StatusCard(
                                         title = "Gempa",
-                                        status = "Aman",
-                                        description = "Tidak terdeteksi adanya gempa",
+                                        status = earthquakeStatus,
+                                        description = when{
+                                            sensorData.vibration < 25 -> "Tidak terdeteksi adanya gempa"
+                                            sensorData.vibration in 25..50 -> "Terdeteksi adanya gempa ringan"
+                                            else -> "Telah terdeteksi gempa, Segera bertindak!"
+                                        },
                                         icon = R.drawable.icon_gempa
                                     )
                                 }
@@ -309,8 +473,12 @@ fun DashboardScreen(
 
                                     StatusCard(
                                         title = "Kebakaran",
-                                        status = "Aman",
-                                        description = "Tidak terdeteksi adanya kebakaran",
+                                        status = fireStatus,
+                                        description = when{
+                                            sensorData.temperature < 60 -> "Tidak terdeteksi adanya kebakaran"
+                                            sensorData.temperature in 60..100 -> "Terdeteksi adanya kenaikan suhu yang tinggi"
+                                            else -> "Telah terdeteksi kebakaran, Segera bertindak!"
+                                        },
                                         icon = R.drawable.icon_kebakaran
                                     )
                                 }
@@ -542,6 +710,9 @@ fun HeaderSection(
                         ),
                         onClick = {
 
+                            FirebaseAuth.getInstance()
+                                .signOut()
+
                             onProfileMenuChange(false)
 
                             navController.navigate("login") {
@@ -551,7 +722,6 @@ fun HeaderSection(
                                 popUpTo("dashboard") {
                                     inclusive = true
                                 }
-
                             }
 
                         }
@@ -566,12 +736,13 @@ fun HeaderSection(
 }
 
 @Composable
-fun GreetingSection(level: DisasterLevel) {
+fun GreetingSection(username: String,
+                    level: DisasterLevel) {
 
     val text = when(level) {
 
         DisasterLevel.AMAN ->
-            "Hai Gardiono! Semua sensor dalam kondisi aman"
+            "Hai $username! Semua sensor dalam kondisi aman"
 
         DisasterLevel.WASPADA ->
             "Terdeteksi adanya anomali sensor"
@@ -658,5 +829,8 @@ fun CalibrationCard(
             )
         }
     }
+
+
+
 
 }

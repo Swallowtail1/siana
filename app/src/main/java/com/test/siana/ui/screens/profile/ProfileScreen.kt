@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -36,10 +35,18 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import android.app.Activity
-import androidx.compose.foundation.layout.Row
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.view.WindowInsetsControllerCompat
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.filled.AccountCircle
+import android.widget.Toast
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextFieldDefaults
 
 
 val PrimaryDark = Color(0xFF132635)
@@ -51,6 +58,49 @@ fun ProfileScreen(
     val context = LocalContext.current
     val activity = context as Activity
 
+    var username by remember {
+        mutableStateOf("")
+    }
+
+    var email by remember {
+        mutableStateOf("")
+    }
+
+    var key by remember {
+        mutableStateOf("")
+    }
+
+    LaunchedEffect(Unit) {
+
+        val uid =
+            FirebaseAuth.getInstance()
+                .currentUser?.uid
+
+        if(uid != null){
+
+            FirebaseFirestore.getInstance()
+                .collection("users")
+                .document(uid)
+                .get()
+                .addOnSuccessListener {
+
+                    username =
+                        it.getString("username")
+                            ?: ""
+
+                    key =
+                        it.getString("apiKey")
+                            ?: ""
+
+                    email =
+                        FirebaseAuth.getInstance()
+                            .currentUser
+                            ?.email
+                            ?: ""
+                }
+        }
+    }
+
     SideEffect {
 
         WindowInsetsControllerCompat(
@@ -58,24 +108,6 @@ fun ProfileScreen(
             activity.window.decorView
         ).isAppearanceLightStatusBars = true
 
-    }
-
-
-
-    val name = remember {
-        mutableStateOf("Gardiono")
-    }
-
-    val email = remember {
-        mutableStateOf("gardiono@gmail.com")
-    }
-
-    val password = remember {
-        mutableStateOf("12345678")
-    }
-
-    val key = remember {
-        mutableStateOf("SIANA-DEVICE-001")
     }
 
     Column(
@@ -127,12 +159,13 @@ fun ProfileScreen(
                 contentAlignment = Alignment.BottomEnd
             ) {
 
-                Box(
-                    modifier = Modifier
-                        .size(120.dp)
-                        .clip(CircleShape)
-                        .background(Color.White)
-                )
+
+                    Icon(
+                        imageVector = Icons.Default.AccountCircle,
+                        contentDescription = null,
+                        modifier = Modifier.size(120.dp)
+                    )
+
 
                 Box(
                     modifier = Modifier
@@ -166,57 +199,130 @@ fun ProfileScreen(
             ) {
 
                 OutlinedTextField(
-                    value = name.value,
+                    value = username,
                     onValueChange = {
-                        name.value = it
+                        username = it
                     },
                     label = {
-                        Text("Nama")
+                        Text("Username")
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    singleLine = true,
+                    colors = TextFieldDefaults.colors(
+                        // 1. Warna teks yang diketik
+                        focusedTextColor = Color.Black,
+                        unfocusedTextColor = Color.Black,
+
+                        // 2. Warna label ("Username")
+                        focusedLabelColor = Color.Black,       // Hitam pekat saat aktif
+                        unfocusedLabelColor = Color.Gray,      // Abu-abu saat tidak aktif agar tidak membingungkan
+
+                        // 3. Warna background dalam ruangan text field
+                        focusedContainerColor = Color.White,
+                        unfocusedContainerColor = Color.White,
+
+                        // 4. Warna garis tepi (Border)
+                        focusedIndicatorColor = Color(0xFF4CC9F0),   // Garis menjadi hitam pekat saat diklik
+                        unfocusedIndicatorColor = Color.LightGray // Garis abu-abu muda saat biasa
+                    )
                 )
 
                 OutlinedTextField(
-                    value = email.value,
+                    value = email,
                     onValueChange = {
-                        email.value = it
                     },
                     label = {
                         Text("Email")
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    singleLine = true,
+                    colors = TextFieldDefaults.colors(
+                        // 1. Warna teks yang diketik
+                        focusedTextColor = Color.Black,
+                        unfocusedTextColor = Color.Black,
+
+                        // 2. Warna label ("Username")
+                        focusedLabelColor = Color.Black,       // Hitam pekat saat aktif
+                        unfocusedLabelColor = Color.Gray,      // Abu-abu saat tidak aktif agar tidak membingungkan
+
+                        // 3. Warna background dalam ruangan text field
+                        focusedContainerColor = Color.White,
+                        unfocusedContainerColor = Color.White,
+
+                        // 4. Warna garis tepi (Border)
+                        focusedIndicatorColor = Color(0xFF4CC9F0),   // Garis menjadi hitam pekat saat diklik
+                        unfocusedIndicatorColor = Color.LightGray // Garis abu-abu muda saat biasa
+                    )
                 )
 
                 OutlinedTextField(
-                    value = password.value,
+                    value = key,
                     onValueChange = {
-                        password.value = it
-                    },
-                    label = {
-                        Text("Password")
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
-                )
-
-                OutlinedTextField(
-                    value = key.value,
-                    onValueChange = {
-                        key.value = it
+                        key = it
                     },
                     label = {
                         Text("Device Key")
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    singleLine = true,
+                    colors = TextFieldDefaults.colors(
+                        // 1. Warna teks yang diketik
+                        focusedTextColor = Color.Black,
+                        unfocusedTextColor = Color.Black,
+
+                        // 2. Warna label ("Username")
+                        focusedLabelColor = Color.Black,       // Hitam pekat saat aktif
+                        unfocusedLabelColor = Color.Gray,      // Abu-abu saat tidak aktif agar tidak membingungkan
+
+                        // 3. Warna background dalam ruangan text field
+                        focusedContainerColor = Color.White,
+                        unfocusedContainerColor = Color.White,
+
+                        // 4. Warna garis tepi (Border)
+                        focusedIndicatorColor = Color(0xFF4CC9F0),   // Garis menjadi hitam pekat saat diklik
+                        unfocusedIndicatorColor = Color.LightGray // Garis abu-abu muda saat biasa
+                    )
                 )
 
                 Spacer(modifier = Modifier.height(10.dp))
 
                 Button(
                     onClick = {
+
+                        val uid =
+                            FirebaseAuth.getInstance()
+                                .currentUser?.uid
+
+                        if (uid != null) {
+
+                            FirebaseFirestore.getInstance()
+                                .collection("users")
+                                .document(uid)
+                                .update(
+                                    mapOf(
+                                        "username" to username,
+                                        "apiKey" to key
+                                    )
+                                )
+                                .addOnSuccessListener {
+
+                                    Toast.makeText(
+                                        context,
+                                        "Data berhasil disimpan",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+
+                                }
+                                .addOnFailureListener {
+
+                                    Toast.makeText(
+                                        context,
+                                        "Gagal menyimpan data",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+
+                                }
+                        }
 
                     },
                     modifier = Modifier

@@ -8,7 +8,7 @@ import com.test.siana.ui.screens.auth.AuthScreen
 import com.test.siana.ui.screens.dashboard.DashboardScreen
 import com.test.siana.ui.screens.profile.ProfileScreen
 import com.test.siana.ui.screens.notification.NotificationScreen
-
+import com.google.firebase.auth.FirebaseAuth
 
 
 @Composable
@@ -16,10 +16,16 @@ fun AppNavigation() {
 
     val navController = rememberNavController()
 
+    val startDestination =
+        if (FirebaseAuth.getInstance().currentUser != null)
+            "dashboard"
+        else
+            "login"
+
     NavHost(
         navController = navController,
-        startDestination = "login"
-    ) {
+        startDestination = startDestination
+    )  {
 
         composable("login") {
             AuthScreen(navController)
