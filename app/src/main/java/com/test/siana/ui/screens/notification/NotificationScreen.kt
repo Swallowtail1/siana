@@ -37,6 +37,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.navigation.NavController
+import com.test.siana.data.model.NotificationModel
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Query
+import com.google.firebase.auth.FirebaseAuth
+import androidx.compose.runtime.LaunchedEffect
+import com.test.siana.utils.formatRelativeTime
 
 val PrimaryDark = Color(0xFF132635)
 
@@ -44,6 +50,7 @@ data class NotificationItem(
     val title: String,
     val description: String,
     val level: String,
+    val timestamp: Long,
     var isCompleted: Boolean = false
 )
 
@@ -51,6 +58,11 @@ data class NotificationItem(
 fun NotificationScreen(
     navController: NavController
 ) {
+
+    val notifications = remember {
+
+        mutableStateListOf<NotificationItem>()
+    }
 
     val context = LocalContext.current
     val activity = context as Activity
@@ -63,30 +75,53 @@ fun NotificationScreen(
         ).isAppearanceLightStatusBars = true
     }
 
-    val notifications = remember {
 
-        mutableStateListOf(
+    LaunchedEffect(Unit) {
 
-            NotificationItem(
-                title = "Terdeteksi Banjir!",
-                description = "Telah terdeteksi banjir, segera ambil tindakan!",
-                level = "danger"
-            ),
+        val uid =
+            FirebaseAuth.getInstance()
+                .currentUser?.uid
+                ?: return@LaunchedEffect
 
-            NotificationItem(
-                title = "Waspada!",
-                description = "Telah terdeteksi beberapa kondisi tidak normal.",
-                level = "warning"
-            ),
-
-            NotificationItem(
-                title = "Terdeteksi Gempa!",
-                description = "Telah terdeteksi gempa, segera ambil tindakan!",
-                level = "completed",
-                isCompleted = true
+        FirebaseFirestore.getInstance()
+            .collection("users")
+            .document(uid)
+            .collection("notifications")
+            .orderBy(
+                "timestamp",
+                Query.Direction.DESCENDING
             )
-        )
+            .addSnapshotListener { value, error ->
+
+                if (
+                    error != null ||
+                    value == null
+                ) return@addSnapshotListener
+
+                notifications.clear()
+
+                value.documents.forEach {
+
+                    val notif =
+                        it.toObject(
+                            NotificationModel::class.java
+                        )
+
+                    if (notif != null) {
+
+                        notifications.add(
+                            NotificationItem(
+                                title = notif.title,
+                                description = notif.description,
+                                level = notif.level ,
+                                timestamp = notif.timestamp
+                            )
+                        )
+                    }
+                }
+            }
     }
+
 
     Column(
         modifier = Modifier
@@ -225,7 +260,7 @@ fun NotificationScreen(
 
                             Text(
                                 text = item.title,
-                                fontSize = 22.sp,
+                                fontSize = 18.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = titleColor
                             )
@@ -234,12 +269,24 @@ fun NotificationScreen(
 
                             Text(
                                 text = item.description,
-                                fontSize = 15.sp,
+                                fontSize = 13.sp,
                                 color =
                                     if (item.isCompleted)
                                         Color(0xFF9AA4AF)
                                     else
                                         PrimaryDark
+                            )
+
+                            Spacer(
+                                modifier = Modifier.height(8.dp)
+                            )
+
+                            Text(
+                                text = formatRelativeTime(
+                                    item.timestamp
+                                ),
+                                fontSize = 11.sp,
+                                color = Color.Gray
                             )
                         }
                     }

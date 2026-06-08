@@ -19,6 +19,7 @@ import android.os.VibrationEffect
 import android.os.VibratorManager
 import android.os.Vibrator
 import android.app.PendingIntent
+import com.test.siana.data.model.NotificationModel
 
 
 
@@ -229,6 +230,12 @@ class MonitoringService : Service() {
                     "⚠️ Waspada Banjir",
                     "Level air mencapai $waterLevel cm"
                 )
+
+                saveNotification(
+                    "⚠️ Waspada Banjir",
+                    "Level air mencapai $waterLevel cm",
+                    "warning"
+                )
             }
 
             DisasterLevel.BAHAYA -> {
@@ -237,6 +244,12 @@ class MonitoringService : Service() {
                     "🚨 Bahaya Banjir",
                     "Level air mencapai $waterLevel cm",
                     true
+                )
+
+                saveNotification(
+                    "🚨 Bahaya Banjir",
+                    "Level air mencapai $waterLevel cm",
+                    "danger"
                 )
 
                 playAlarm()
@@ -274,6 +287,12 @@ class MonitoringService : Service() {
                     "⚠️ Waspada Gempa",
                     "Terdeteksi getaran mencapai $mmi MMI"
                 )
+
+                saveNotification(
+                    "⚠️ Waspada Gempa",
+                    "Terdeteksi getaran mencapai $mmi MMI",
+                    "warning"
+                )
             }
 
             DisasterLevel.BAHAYA -> {
@@ -282,6 +301,12 @@ class MonitoringService : Service() {
                     "🚨 Bahaya Gempa",
                     "Level getaran mencapai $mmi MMI",
                     true
+                )
+
+                saveNotification(
+                    "🚨 Bahaya Gempa",
+                    "Level getaran mencapai $mmi MMI",
+                    "danger"
                 )
 
                 playAlarm()
@@ -317,6 +342,12 @@ class MonitoringService : Service() {
                     "⚠️ Waspada Kebakaran",
                     "Terdeteksi kenaikan suhu mencapai $temperature °C"
                 )
+
+                saveNotification(
+                    "⚠️ Waspada Kebakaran",
+                    "Terdeteksi kenaikan suhu mencapai $temperature °C",
+                    "warning"
+                )
             }
 
             DisasterLevel.BAHAYA -> {
@@ -326,6 +357,13 @@ class MonitoringService : Service() {
                     "Level suhu mencapai $temperature °C",
                     true
                 )
+
+                saveNotification(
+                    "🚨 Bahaya Kebakaran",
+                    "Level suhu mencapai $temperature °C",
+                    "danger"
+                )
+
 
                 playAlarm()
                 vibratePhone()
@@ -545,6 +583,33 @@ class MonitoringService : Service() {
                 )
             )
         }
+    }
+
+    private fun saveNotification(
+        title: String,
+        description: String,
+        level: String
+    ) {
+
+        val uid =
+            FirebaseAuth.getInstance()
+                .currentUser?.uid
+                ?: return
+
+        FirebaseFirestore.getInstance()
+            .collection("users")
+            .document(uid)
+            .collection("notifications")
+            .add(
+
+                NotificationModel(
+                    title = title,
+                    description = description,
+                    level = level,
+                    timestamp =
+                        System.currentTimeMillis()
+                )
+            )
     }
 
     override fun onDestroy() {
