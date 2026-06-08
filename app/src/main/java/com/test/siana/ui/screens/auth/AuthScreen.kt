@@ -39,6 +39,10 @@ import com.test.siana.data.model.User
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.IconButton
+import com.test.siana.utils.FCMUtils
+import androidx.core.content.ContextCompat
+import com.test.siana.service.MonitoringService
+import android.content.Intent
 
 val LoginBlue = Color(0xFF4CC9F0)
 val LoginDark = Color(0xFF132635)
@@ -290,6 +294,17 @@ fun AuthScreen(
                                     password = password
                                 ) {
 
+                                    FCMUtils.saveFcmToken()
+                                    val intent =
+                                        Intent(
+                                            context,
+                                            MonitoringService::class.java
+                                        )
+
+                                    ContextCompat.startForegroundService(
+                                        context,
+                                        intent
+                                    )
                                     navController.navigate("dashboard") {
 
                                         launchSingleTop = true

@@ -18,6 +18,7 @@ fun AppNavigation() {
 
     val startDestination =
         if (FirebaseAuth.getInstance().currentUser != null)
+
             "dashboard"
         else
             "login"

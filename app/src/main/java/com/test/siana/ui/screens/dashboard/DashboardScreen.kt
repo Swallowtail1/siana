@@ -64,7 +64,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.test.siana.R
 import com.test.siana.data.model.DisasterLevel
@@ -78,6 +77,9 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
 import com.test.siana.data.model.SensorData
+import android.content.Intent
+import com.test.siana.service.MonitoringService
+import com.test.siana.utils.ThresholdManager
 
 val PrimaryDark = Color(0xFF132635)
 
@@ -87,10 +89,10 @@ private fun calculateLevel(
 ): DisasterLevel {
 
     if (
-        data.water_level >= 200 ||
-        data.vibration >= 50 ||
+        data.water_level >= ThresholdManager.config.water_max ||
+        data.vibration >= ThresholdManager.config.vibration_max ||
         data.mq135 >= 1400.0 ||
-        data.temperature >= 46
+        data.temperature >= ThresholdManager.config.temp_max
 
 
     ) {
@@ -98,10 +100,10 @@ private fun calculateLevel(
     }
 
     if (
-        data.temperature >= 38 ||
+        data.temperature >= 40 ||
         data.mq135 >= 800.0 ||
         data.vibration >= 25 ||
-        data.water_level >= 150
+        data.water_level >= 50.0
     ) {
         return DisasterLevel.WASPADA
     }
@@ -299,8 +301,8 @@ fun DashboardScreen(
 
                         append(
                             when{
-                                sensorData.temperature < 38 -> "Bagus! Suhunya "
-                                sensorData.temperature in 38..45 -> "Suhunya agak "
+                                sensorData.temperature < 40 -> "Bagus! Suhunya "
+                                sensorData.temperature in 40..ThresholdManager.config.temp_max -> "Suhunya agak "
                                 else -> "Suhu "
                             }
                         )
@@ -309,8 +311,8 @@ fun DashboardScreen(
                             style = SpanStyle(
                                 color = Color(
                                     when{
-                                        sensorData.temperature < 38 -> 0xFF4CC9F0
-                                        sensorData.temperature in 38..45 -> 0xFFFFC107
+                                        sensorData.temperature < 40 -> 0xFF4CC9F0
+                                        sensorData.temperature in 40..ThresholdManager.config.temp_max -> 0xFFFFC107
                                         else -> 0xFFDC3545
                                     }
                                 ),
@@ -319,8 +321,8 @@ fun DashboardScreen(
                         ) {
                             append(
                                 when{
-                                    sensorData.temperature < 38 -> "normal"
-                                    sensorData.temperature in 38..45 -> "panas"
+                                    sensorData.temperature < 40 -> "normal"
+                                    sensorData.temperature in 40..ThresholdManager.config.temp_max -> "panas"
                                     else -> "tidak normal"
                                 }
                             )
@@ -447,8 +449,8 @@ fun DashboardScreen(
                                         title = "Banjir",
                                         status = floodStatus,
                                         description = when{
-                                            sensorData.water_level < 150.0 -> "Tidak terdeteksi adanya banjir"
-                                            sensorData.water_level in 150.0..200.0 -> "Terdeteksi adanya banjir ringan"
+                                            sensorData.water_level < 50.0 -> "Tidak terdeteksi adanya banjir"
+                                            sensorData.water_level in 50.0..ThresholdManager.config.water_max -> "Terdeteksi adanya banjir ringan"
                                             else -> "Telah terdeteksi banjir, Segera bertindak!"
                                         },
                                         icon = R.drawable.icon_banjir
@@ -462,7 +464,7 @@ fun DashboardScreen(
                                         status = earthquakeStatus,
                                         description = when{
                                             sensorData.vibration < 25 -> "Tidak terdeteksi adanya gempa"
-                                            sensorData.vibration in 25..50 -> "Terdeteksi adanya gempa ringan"
+                                            sensorData.vibration in 25..ThresholdManager.config.vibration_max -> "Terdeteksi adanya gempa ringan"
                                             else -> "Telah terdeteksi gempa, Segera bertindak!"
                                         },
                                         icon = R.drawable.icon_gempa
@@ -475,8 +477,8 @@ fun DashboardScreen(
                                         title = "Kebakaran",
                                         status = fireStatus,
                                         description = when{
-                                            sensorData.temperature < 60 -> "Tidak terdeteksi adanya kebakaran"
-                                            sensorData.temperature in 60..100 -> "Terdeteksi adanya kenaikan suhu yang tinggi"
+                                            sensorData.temperature < 38 -> "Tidak terdeteksi adanya kebakaran"
+                                            sensorData.temperature in 38..ThresholdManager.config.temp_max -> "Terdeteksi adanya kenaikan suhu yang tinggi"
                                             else -> "Telah terdeteksi kebakaran, Segera bertindak!"
                                         },
                                         icon = R.drawable.icon_kebakaran
@@ -583,6 +585,8 @@ fun HeaderSection(
     onProfileMenuChange: (Boolean) -> Unit
 )
  {
+
+     val context = LocalContext.current
 
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -712,6 +716,13 @@ fun HeaderSection(
 
                             FirebaseAuth.getInstance()
                                 .signOut()
+
+                            context.stopService(
+                                Intent(
+                                    context,
+                                    MonitoringService::class.java
+                                )
+                            )
 
                             onProfileMenuChange(false)
 
