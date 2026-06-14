@@ -2,7 +2,7 @@ package com.test.siana.data.model
 
 data class ThresholdConfig(
 
-    val mq135_max: Int = 1,
+    val mq135_max: Double = 1400.0,
 
     val temp_max: Int = 400,
 

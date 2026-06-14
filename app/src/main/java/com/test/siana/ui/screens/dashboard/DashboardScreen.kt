@@ -80,18 +80,21 @@ import com.test.siana.data.model.SensorData
 import android.content.Intent
 import com.test.siana.service.MonitoringService
 import com.test.siana.utils.ThresholdManager
+import android.widget.Toast
+import androidx.compose.foundation.layout.widthIn
+import com.test.siana.utils.cleanNumber
 
 val PrimaryDark = Color(0xFF132635)
 
 
 private fun calculateLevel(
-    data: SensorData
+    data: SensorData,
 ): DisasterLevel {
 
     if (
         data.water_level >= ThresholdManager.config.water_max ||
         data.vibration >= ThresholdManager.config.vibration_max ||
-        data.mq135 >= 1400.0 ||
+        data.mq135 >= ThresholdManager.config.mq135_max ||
         data.temperature >= ThresholdManager.config.temp_max
 
 
@@ -100,15 +103,71 @@ private fun calculateLevel(
     }
 
     if (
-        data.temperature >= 40 ||
-        data.mq135 >= 800.0 ||
-        data.vibration >= 25 ||
-        data.water_level >= 50.0
+        data.temperature >= (ThresholdManager.config.temp_max-20) ||
+        data.mq135 >= (ThresholdManager.config.mq135_max-500.0) ||
+        data.vibration >= (ThresholdManager.config.vibration_max-25) ||
+        data.water_level >= (ThresholdManager.config.water_max-50.0)
     ) {
         return DisasterLevel.WASPADA
     }
 
     return DisasterLevel.AMAN
+}
+
+private fun loadThreshold(
+    deviceId: String,
+    onLoaded: (
+        waterMax: String,
+        vibrationMax: String,
+        tempMax: String,
+        mq135Max: String
+    ) -> Unit
+) {
+    FirebaseDatabase.getInstance()
+        .getReference("devices/$deviceId/threshold")
+        .get()
+        .addOnSuccessListener { snapshot ->
+
+            val waterMax = snapshot.child("water_max").getValue(Double::class.java) ?: 60.0
+            val vibrationMax = snapshot.child("vibration_max").getValue(Int::class.java) ?: 50
+            val tempMax = snapshot.child("temp_max").getValue(Int::class.java) ?: 60
+            val mq135Max = snapshot.child("mq135_max").getValue(Double::class.java) ?: 1400.0
+
+            onLoaded(
+                waterMax.cleanNumber(),
+                vibrationMax.toString(),
+                tempMax.toString(),
+                mq135Max.cleanNumber()
+            )
+        }
+}
+
+private fun saveThreshold(
+    deviceId: String,
+    waterMax: String,
+    vibrationMax: String,
+    tempMax: String,
+    mq135Max: String,
+    context: android.content.Context,
+    onSuccess: () -> Unit
+) {
+    val threshold = mapOf(
+        "water_max" to (waterMax.toDoubleOrNull() ?: 70.0),
+        "vibration_max" to (vibrationMax.toIntOrNull() ?: 100),
+        "temp_max" to (tempMax.toIntOrNull() ?: 400),
+        "mq135_max" to (mq135Max.toDoubleOrNull() ?: 1)
+    )
+
+    FirebaseDatabase.getInstance()
+        .getReference("devices/$deviceId/threshold")
+        .updateChildren(threshold)
+        .addOnSuccessListener {
+            Toast.makeText(context, "Threshold berhasil disimpan", Toast.LENGTH_SHORT).show()
+            onSuccess()
+        }
+        .addOnFailureListener {
+            Toast.makeText(context, "Gagal menyimpan threshold", Toast.LENGTH_SHORT).show()
+        }
 }
 
 @Composable
@@ -143,6 +202,11 @@ fun DashboardScreen(
     val fireStatus =
         getFireStatus(sensorData.temperature)
 
+    var waterMax by remember { mutableStateOf("") }
+    var vibrationMax by remember { mutableStateOf("") }
+    var tempMax by remember { mutableStateOf("") }
+    var mq135Max by remember { mutableStateOf("") }
+
     LaunchedEffect(Unit) {
 
         val uid =
@@ -164,9 +228,15 @@ fun DashboardScreen(
                     deviceId =
                         it.getString("apiKey")
                             ?: ""
+
+                    loadThreshold(deviceId) { water, vibration, temp, mq135 ->
+                        waterMax = water
+                        vibrationMax = vibration
+                        tempMax = temp
+                        mq135Max = mq135
+                    }
                 }
         }
-
 
     }
 
@@ -187,6 +257,8 @@ fun DashboardScreen(
                 override fun onDataChange(
                     snapshot: DataSnapshot
                 ) {
+
+
 
                     sensorData =
                         snapshot.getValue(
@@ -218,20 +290,9 @@ fun DashboardScreen(
     }
 
 
+
     var isCalibrationMode by remember {
         mutableStateOf(false)
-    }
-
-    val suhuThreshold = remember {
-        mutableStateOf("10")
-    }
-
-    val udaraThreshold = remember {
-        mutableStateOf("10")
-    }
-
-    val gempaThreshold = remember {
-        mutableStateOf("10")
     }
 
     val level = DashboardState.currentLevel
@@ -247,10 +308,9 @@ fun DashboardScreen(
         DisasterLevel.BAHAYA ->
             R.drawable.bg_dashboard_bahaya
     }
-    val satuan = 100.0
+
     val udaraHitung = sensorData.mq135 / 20.0
-    val udaraKurang = satuan - udaraHitung
-    val udaraFormat = String.format("%.2f", udaraKurang)
+    val udaraFormat = String.format("%.2f", udaraHitung)
 
     Box(
         modifier = Modifier.fillMaxSize()
@@ -301,8 +361,8 @@ fun DashboardScreen(
 
                         append(
                             when{
-                                sensorData.temperature < 40 -> "Bagus! Suhunya "
-                                sensorData.temperature in 40..ThresholdManager.config.temp_max -> "Suhunya agak "
+                                sensorData.temperature < (ThresholdManager.config.temp_max-20) -> "Bagus! Suhunya "
+                                sensorData.temperature in (ThresholdManager.config.temp_max-20)..ThresholdManager.config.temp_max -> "Suhunya agak "
                                 else -> "Suhu "
                             }
                         )
@@ -311,8 +371,8 @@ fun DashboardScreen(
                             style = SpanStyle(
                                 color = Color(
                                     when{
-                                        sensorData.temperature < 40 -> 0xFF4CC9F0
-                                        sensorData.temperature in 40..ThresholdManager.config.temp_max -> 0xFFFFC107
+                                        sensorData.temperature < (ThresholdManager.config.temp_max-20) -> 0xFF4CC9F0
+                                        sensorData.temperature in (ThresholdManager.config.temp_max-20)..ThresholdManager.config.temp_max -> 0xFFFFC107
                                         else -> 0xFFDC3545
                                     }
                                 ),
@@ -321,8 +381,8 @@ fun DashboardScreen(
                         ) {
                             append(
                                 when{
-                                    sensorData.temperature < 40 -> "normal"
-                                    sensorData.temperature in 40..ThresholdManager.config.temp_max -> "panas"
+                                    sensorData.temperature < (ThresholdManager.config.temp_max-20) -> "normal"
+                                    sensorData.temperature in (ThresholdManager.config.temp_max-20)..ThresholdManager.config.temp_max -> "panas"
                                     else -> "tidak normal"
                                 }
                             )
@@ -333,7 +393,7 @@ fun DashboardScreen(
 
                 SensorCard(
                     modifier = Modifier.weight(1f),
-                    title = "Udara",
+                    title = "Asap",
                     value = "${udaraFormat}%",
                     description = buildAnnotatedString {
 
@@ -343,8 +403,8 @@ fun DashboardScreen(
                             style = SpanStyle(
                                 color = Color(
                                     when{
-                                        sensorData.mq135 < 800.0 -> 0xFF4CC9F0
-                                        sensorData.mq135 in 800.0..1400.0 -> 0xFFFFC107
+                                        sensorData.mq135 < (ThresholdManager.config.mq135_max-500.0) -> 0xFF4CC9F0
+                                        sensorData.mq135 in (ThresholdManager.config.mq135_max-500.0)..ThresholdManager.config.mq135_max -> 0xFFFFC107
                                         else -> 0xFFDC3545
                                     }
                                 ),
@@ -353,8 +413,8 @@ fun DashboardScreen(
                         ) {
                             append(
                                 when{
-                                    sensorData.mq135 < 800.0 -> "bersih"
-                                    sensorData.mq135 in 800.0..1400.0 -> "cukup bersih"
+                                    sensorData.mq135 < (ThresholdManager.config.mq135_max-500.0) -> "bersih"
+                                    sensorData.mq135 in (ThresholdManager.config.mq135_max-500.0)..ThresholdManager.config.mq135_max -> "cukup bersih"
                                     else -> "kotor"
                                 }
                             )
@@ -449,8 +509,8 @@ fun DashboardScreen(
                                         title = "Banjir",
                                         status = floodStatus,
                                         description = when{
-                                            sensorData.water_level < 50.0 -> "Tidak terdeteksi adanya banjir"
-                                            sensorData.water_level in 50.0..ThresholdManager.config.water_max -> "Terdeteksi adanya banjir ringan"
+                                            sensorData.water_level < (ThresholdManager.config.water_max-50.0) -> "Tidak terdeteksi adanya banjir"
+                                            sensorData.water_level in (ThresholdManager.config.water_max-50.0)..ThresholdManager.config.water_max -> "Terdeteksi adanya banjir ringan"
                                             else -> "Telah terdeteksi banjir, Segera bertindak!"
                                         },
                                         icon = R.drawable.icon_banjir
@@ -463,8 +523,8 @@ fun DashboardScreen(
                                         title = "Gempa",
                                         status = earthquakeStatus,
                                         description = when{
-                                            sensorData.vibration < 25 -> "Tidak terdeteksi adanya gempa"
-                                            sensorData.vibration in 25..ThresholdManager.config.vibration_max -> "Terdeteksi adanya gempa ringan"
+                                            sensorData.vibration < (ThresholdManager.config.vibration_max-25) -> "Tidak terdeteksi adanya gempa"
+                                            sensorData.vibration in (ThresholdManager.config.vibration_max-25)..ThresholdManager.config.vibration_max -> "Terdeteksi adanya gempa ringan"
                                             else -> "Telah terdeteksi gempa, Segera bertindak!"
                                         },
                                         icon = R.drawable.icon_gempa
@@ -477,8 +537,8 @@ fun DashboardScreen(
                                         title = "Kebakaran",
                                         status = fireStatus,
                                         description = when{
-                                            sensorData.temperature < 38 -> "Tidak terdeteksi adanya kebakaran"
-                                            sensorData.temperature in 38..ThresholdManager.config.temp_max -> "Terdeteksi adanya kenaikan suhu yang tinggi"
+                                            sensorData.temperature < (ThresholdManager.config.temp_max-20) -> "Tidak terdeteksi adanya kebakaran"
+                                            sensorData.temperature in (ThresholdManager.config.temp_max-20)..ThresholdManager.config.temp_max -> "Terdeteksi adanya kenaikan suhu yang tinggi"
                                             else -> "Telah terdeteksi kebakaran, Segera bertindak!"
                                         },
                                         icon = R.drawable.icon_kebakaran
@@ -498,9 +558,9 @@ fun DashboardScreen(
                                     CalibrationCard(
                                         title = "Banjir",
                                         sensor = "Ultrasonik HC-SR04",
-                                        value = suhuThreshold.value,
+                                        value = waterMax,
                                         onValueChange = {
-                                            suhuThreshold.value = it
+                                            waterMax = it
                                         },
                                         unit = "cm"
                                     )
@@ -511,11 +571,11 @@ fun DashboardScreen(
                                     CalibrationCard(
                                         title = "Gempa",
                                         sensor = "Gyro MPU-6050",
-                                        value = udaraThreshold.value,
+                                        value = vibrationMax,
                                         onValueChange = {
-                                            udaraThreshold.value = it
+                                            vibrationMax = it
                                         },
-                                        unit = "M"
+                                        unit = "gal"
                                     )
                                 }
 
@@ -524,9 +584,9 @@ fun DashboardScreen(
                                     CalibrationCard(
                                         title = "Kebakaran",
                                         sensor = "Suhu DHT-22",
-                                        value = gempaThreshold.value,
+                                        value = tempMax,
                                         onValueChange = {
-                                            gempaThreshold.value = it
+                                            tempMax = it
                                         },
                                         unit = "°C"
                                     )
@@ -537,9 +597,9 @@ fun DashboardScreen(
                                     CalibrationCard(
                                         title = "Kebakaran",
                                         sensor = "Asap MQ-135",
-                                        value = gempaThreshold.value,
+                                        value = mq135Max,
                                         onValueChange = {
-                                            gempaThreshold.value = it
+                                            mq135Max = it
                                         },
                                         unit = "ppm"
                                     )
@@ -549,7 +609,16 @@ fun DashboardScreen(
 
                                     Button(
                                         onClick = {
-
+                                            saveThreshold(
+                                                deviceId = deviceId,
+                                                waterMax = waterMax,
+                                                vibrationMax = vibrationMax,
+                                                tempMax = tempMax,
+                                                mq135Max = mq135Max,
+                                                context = context
+                                            ) {
+                                                isCalibrationMode = false
+                                            }
                                         },
                                         modifier = Modifier
                                             .fillMaxWidth()
@@ -816,7 +885,8 @@ fun CalibrationCard(
             OutlinedTextField(
                 value = value,
                 onValueChange = onValueChange,
-                modifier = Modifier.width(58.dp),
+                modifier = Modifier.widthIn(min = 70.dp,
+                    max = 110.dp),
                 singleLine = true,
                 shape = RoundedCornerShape(12.dp),
                 keyboardOptions = KeyboardOptions(
@@ -840,6 +910,8 @@ fun CalibrationCard(
             )
         }
     }
+
+
 
 
 

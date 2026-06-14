@@ -1,5 +1,7 @@
 package com.test.siana.ui.screens.dashboard
 
+import com.test.siana.utils.ThresholdManager
+
 
 fun getFloodStatus(
     waterLevel: Double
@@ -7,9 +9,9 @@ fun getFloodStatus(
 
     return when {
 
-        waterLevel >= 200 -> "Bahaya"
+        waterLevel >= ThresholdManager.config.water_max -> "Bahaya"
 
-        waterLevel >= 150 -> "Waspada"
+        waterLevel >= 50 -> "Waspada"
 
         else -> "Aman"
     }
@@ -21,7 +23,7 @@ fun getEarthquakeStatus(
 
     return when {
 
-        vibration >= 50 -> "Bahaya"
+        vibration >= ThresholdManager.config.vibration_max -> "Bahaya"
 
         vibration >= 25 -> "Waspada"
 
@@ -35,9 +37,9 @@ fun getFireStatus(
 
     return when {
 
-        temperature >= 100 -> "Bahaya"
+        temperature >= ThresholdManager.config.temp_max -> "Bahaya"
 
-        temperature >= 60 -> "Waspada"
+        temperature >= 50 -> "Waspada"
 
         else -> "Aman"
     }
